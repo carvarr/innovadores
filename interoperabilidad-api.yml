@@ -1,0 +1,289 @@
+openapi: '3.0.2'
+info:
+  title: Interoperabilidad en salud
+  version: '1.0'
+  description: 'Api para el intercambio de información clinica del paciente'
+  contact:
+    name: Soporte
+    email: soportesalud@sura.com.co
+  termsOfService: https://terms.sura.com/service
+  license:
+    name: Licencia
+    url: https://api.sura.com/license
+externalDocs:
+  description: Guia de inicio rápido
+  url: https://api.sura.com/interoperabilidadsalud/getstarted
+tags:
+  - name: Expediente clinico
+    description: operaciones de acceso a la historia clinica del paciente de manera que se le pueda suministrar la atención que pueda llegar a requerir en el lugar, momento, medios y modo en el que lo necesite
+servers:
+  - url: https://api.labsura.com/{versions}/interoperabilidadsalud
+    variables:
+      versions:
+        enum:
+          - "v1"
+        default: "v1"
+security:
+  - ApiKeyAuth: []
+paths:
+  /rda:
+    post:
+      summary: genera el resumen digital de la atención del paciente
+      tags:
+        - "Expediente clinico"
+      parameters:
+        - name: "x-response-location"
+          in: "header"
+          description: "URL donde se debe enviar la respuesta cuando se procese el RDA"
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: objeto RDA del paciente
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Rda'
+        required: true
+      responses:
+        '202':
+          description: la solicitud fue recibida y será procesada
+        '400':
+          description: se produjeron errores sintácticos
+          content:
+            application/json:
+              schema:
+                type: array
+                items: 
+                  $ref: '#/components/schemas/Errors'
+components:
+  schemas:
+    Errors:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        message: 
+          type: string
+        detail:
+          type: string
+    Rda:
+      type: object
+      properties:
+        date:
+          type: string
+          description: fecha de la atención
+          externalDocs:
+            url: http://hl7.org/fhir/R4B/datatypes.html#dateTime
+        conditions:
+          description: Condiciones de paciente
+          type: array
+          items:
+            $ref: '#/components/schemas/Condition'
+        patient:
+          type: object
+          description: Paciente
+          $ref: '#/components/schemas/Patient'
+        professional:
+          type: object
+          description: Profesional
+          $ref: '#/components/schemas/Professional'
+        organization:
+          type: object
+          description: Entidad regional de salud
+          $ref: '#/components/schemas/RegionalOrganization'
+        prestador:
+          type: object
+          description: Entidad prestadora de salud
+          $ref: '#/components/schemas/HealthProvider'
+      example:
+        date: "2022-08-02T14:22:30-05:00"
+        conditions:
+          - code: "E10.4"
+            text: "Diabetes Tipo 1, con complicaciones neurologicas"
+        patient:
+          documentType: "CC"
+          documentNumber: "12345"
+          firstName: "Miguel"
+          secondName: "Angel"
+          surname: "Lopez"
+          secondSurname: "Ortiz"
+          gender: "male"
+          genderIdentityId: "03"
+          disabilityId: "01"
+          ethnicityId: "01"
+          nationality: "170"
+          birthDate: "1974-12-25"
+          address:
+            country: "170"
+            city: "05"
+            ruralZone: "02"
+        professional:
+          documentType: "CC"
+          documentNumber: "12345"
+          nationality: "170"
+        organization:
+          id: 25
+          active: true
+          name: "DIRECCION DEPARTAMENTAL DE ANTIOQUIA"
+        prestador:
+          id: 31412
+          active: true
+          name: "Hospital de Colombia"
+    Patient:
+      type: object
+      required:
+        - documentType
+        - documentNumber
+        - firstName
+        - surname
+        - gender
+        - genderIdentityId
+        - disabilityId
+        - ethnicityId
+        - nationality
+        - birthDate
+        - address
+      properties:
+        documentType:
+          type: string
+          description: Tipo de documento
+          externalDocs:
+            url: https://www.minsalud.gov.co/ihc/fhir/CodeSystem/IdspersonaColombia
+        documentNumber:
+          type: string
+          description: Número de documento
+        firstName: 
+          type: string
+          description: Primer nombre
+        secondName:
+          type: string
+          description: Segundo nombre
+        surname: 
+          type: string
+          description: Primer Apellido
+        secondSurname: 
+          type: string
+          description: Segundo Apellido
+        gender:
+          type: string
+          description: Genero
+          externalDocs:
+            url: http://hl7.org/fhir/StructureDefinition/patient-genderIdentity
+        genderIdentityId:
+          type: string
+          description: Identificador de la identidad de genero
+          externalDocs:
+            url: https://www.minsalud.gov.co/ihc/fhir/CodeSystem/IdentidadGeneroCS
+        disabilityId:
+          type: string
+          description: Identificador del tipo de discapacidad
+          externalDocs:
+            url: https://www.minsalud.gov.co/ihc/fhir/CodeSystem/DiscapacidadCS
+        ethnicityId:
+          type: string
+          description: Identificador de la etnia
+          externalDocs:
+            url: https://www.minsalud.gov.co/ihc/fhir/CodeSystem/EtniaCS
+        nationality:
+          type: string
+          description: Identificador de la nacionalidad
+          externalDocs:
+            url: https://www.minsalud.gov.co/ihc/fhir/CodeSystem/PaisesCS
+        birthDate:
+          type: string
+          description: Fecha de nacimiento
+          externalDocs:
+            url: http://hl7.org/fhir/StructureDefinition/patient-birthTime
+        address:
+          type: object
+          description: Dirección
+          properties:
+            country:
+              type: string
+              description: código del país
+            city:
+              type: string
+              description: código de la ciudad
+            ruralZone:
+              type: string
+              description: código de la zona rural
+              externalDocs:
+                url: https://www.minsalud.gov.co/ihc/fhir/CodeSystem/ZonaResidenciaCS
+    Professional:
+      type: object
+      description: profesional de la salud
+      properties:
+        documentType:
+          type: string
+          description: Tipo de documento
+          externalDocs:
+            url: https://www.minsalud.gov.co/ihc/fhir/CodeSystem/IdspersonaColombia
+        documentNumber:
+          type: string
+          description: Número de documento
+        nationality:
+          type: string
+          description: Identificador de la nacionalidad
+          externalDocs:
+            url: https://www.minsalud.gov.co/ihc/fhir/CodeSystem/PaisesCS
+    RegionalOrganization:
+      type: object
+      required:
+        - id
+        - active
+        - name
+      description: Entidad de salud
+      properties:
+        id:
+          type: number
+          description: identificador de la entidad
+          externalDocs:
+            url: https://www.minsalud.gov.co/ihc/DIVIPOLA
+        active:
+          type: boolean
+          description: estado
+          default: true
+        name:
+          type: string
+          description: nombre
+    HealthProvider:
+      type: object
+      required:
+        - id
+        - active
+        - name
+      description: Entidad de salud
+      properties:
+        id:
+          type: number
+          description: identificador de la entidad
+          externalDocs:
+            url: https://www.minsalud.gov.co/ihc/codigosOrganizacionSGSSS
+        active:
+          type: boolean
+          description: estado
+          default: true
+        name:
+          type: string
+          description: nombre
+    Condition:
+      type: object
+      description: Condiciones de paciente
+      properties:
+        code:
+          type: string
+          description: código de la condición
+          externalDocs:
+            url: http://hl7.org/fhir/sid/icd-10
+        text:
+          type: string
+          description: nombre de la condición
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+      
